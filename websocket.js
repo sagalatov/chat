@@ -1,5 +1,3 @@
-// не забудьте сделать npm install ;)
-
 const WebSocketServer = require('ws').Server;
 const server = new WebSocketServer({ port: 9090 });
 
@@ -51,11 +49,3 @@ server.on('connection', socket => {
         console.log('close connection');
     });
 });
-
-// user1 -> server
-// -- user1
-// -- user2
-// -- user3
-
-
-// user -> http -> httpServer -> id -> user -> ws -> client -> httpServer -> url

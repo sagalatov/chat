@@ -75,9 +75,11 @@
 
             socket.addEventListener('message', function(event) {
                 const message = JSON.parse(event.data);
-
                 if (message.type === 'hello') {
-                    addMessage(`${message.data.name} вошел в чат...`, '', true);
+                    if (message.data.name.length < 1) {
+                        message.data.name = "Аноним";
+                        addMessage(`${message.data.name} вошел в чат...`, '', true);
+                    }
                 } else if (message.type === 'typing') {
                     typingNow.add(message.from);
 
@@ -91,6 +93,7 @@
                 } else if (message.type === 'message') {
                     addMessage(message.data.body, message.from);
                 }
+            
             });
             socket.addEventListener('error', function() {
                 alert('Соединение закрыто или не может быть открыто');
@@ -105,7 +108,10 @@
                 var userName = document.createElement('span');
 
                 userName.classList.add('user-name');
+               
                 userName.textContent = fromName;
+
+        
 
                 messageItem.className = 'list-group-item';
                 messageItem.textContent = message;
