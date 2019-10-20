@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+            .list-group {
+                height: 300px;
+                overflow: scroll;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .panel {
+                position: relative;
+            }
+
+            .typing {
+                display: none;
+                position: absolute;
+                z-index: 1000;
+                right: 5px;
+                bottom: 7px;
+                border: 2px solid #ddd;
+                background: #f5f5f5;
+                padding: 2px;
+                border-radius: 5px;
+            }
+
+            .typing-visible {
+                display: block;
+            }
+
+            .service-message {
+                color: #989898;
+            }
+
+            .user-name {
+                font-weight: bold;
+                padding-right: 6px;
+            }
+        </style>
+    </head>
+    <body class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3>
+                    Сообщения
+                </h3>
+            </div>
+            <ul class="list-group" id="messageContainer">
+            </ul>
+            <div class="typing" id="typing"></div>
+        </div>
+        <div class="row">
+            <div class="col-sm-10">
+                <input class="form-control" id="messageText" placeholder="введите сообщение...">
+            </div>
+            <div class="col-sm-2">
+                <button class="btn btn-default" id="sendButton">отправить</button>
+            </div>
+        </div>
+
+        <script>
+            const socket = new WebSocket('ws://192.168.1.41:9090');
+            const sendButton = document.querySelector('#sendButton');
+            const messageText = document.querySelector('#messageText');
+            const typing = document.querySelector('#typing');
+            const messageContainer = document.querySelector('#messageContainer');
+            const typingNow = new Set();
+            let typingTimer;
+
+            socket.addEventListener('message', function(event) {
+                const message = JSON.parse(event.data);
+
+                if (message.type === 'hello') {
+                    addMessage(`${message.data.name} вошел в чат...`, '', true);
+                } else if (message.type === 'typing') {
+                    typingNow.add(message.from);
+
+                    typing.classList.add('typing-visible');
+                    typing.textContent = `${[...typingNow]} ${typingNow.size > 1 ? 'печатают...' : 'печатает...'}`;
+                    clearTimeout(typingTimer);
+                    typingTimer = setTimeout(() => {
+                        typingNow.clear();
+                        typing.classList.remove('typing-visible');
+                    }, 1000);
+                } else if (message.type === 'message') {
+                    addMessage(message.data.body, message.from);
+                }
+            });
+            socket.addEventListener('error', function() {
+                alert('Соединение закрыто или не может быть открыто');
+            });
+            socket.addEventListener('open', function() {
+                const name = prompt('Как вас зовут?');
+                sendHello(name);
+            });
+
+            function addMessage(message, fromName, isService) {
+                var messageItem = document.createElement('li');
+                var userName = document.createElement('span');
+
+                userName.classList.add('user-name');
+                userName.textContent = fromName;
+
+                messageItem.className = 'list-group-item';
+                messageItem.textContent = message;
+
+                if (isService) {
+                    messageItem.classList.add('service-message');
+                }
+
+                if (fromName) {
+                    messageItem.insertBefore(userName, messageItem.firstChild);
+                }
+
+                messageContainer.appendChild(messageItem);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+
+            sendButton.addEventListener('click', handleSend);
+            messageText.addEventListener('change', handleSend);
+            messageText.addEventListener('input', sendTyping);
+
+            function handleSend() {
+                sendMessage(messageText.value);
+                messageText.value = '';
+            }
+
+            function sendHello(name) {
+                var message = {
+                    type: 'hello',
+                    data: { name }
+                };
+
+                sendToServer(message);
+            }
+
+            function sendTyping() {
+                var message = {
+                    type: 'typing'
+                };
+
+                sendToServer(message);
+            }
+
+            function sendMessage(body) {
+                var message = {
+                    type: 'message',
+                    data: {
+                        body: body
+                    }
+                };
+
+                sendToServer(message);
+            }
+
+            function sendToServer(message) {
+                socket.send(JSON.stringify(message));
+            }
+        </script>
+    </body>
+</html>
