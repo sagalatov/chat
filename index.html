@@ -77,7 +77,8 @@
                 const message = JSON.parse(event.data);
                 if (message.type === 'hello') {
                     if (message.data.name.length < 1) {
-                        message.data.name = "Аноним";
+                        addMessage("Аноним вошел в чат...", '', true);
+                    } else {
                         addMessage(`${message.data.name} вошел в чат...`, '', true);
                     }
                 } else if (message.type === 'typing') {
